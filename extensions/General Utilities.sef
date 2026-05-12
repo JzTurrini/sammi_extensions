@@ -32,7 +32,7 @@ I will update this extension with more utilities in the future.
     <p>This guide explains each custom command, what it does, and shows examples of how to use them.</p>
 
     <div class="generalUtilities">
-        <h3>1. Clear Invisible Characters from String</h3>
+        <h3>1. Clear Invisible Caracteres from String</h3>
         <p>Removes invisible or non-printable characters (like zero-width spaces, BOM, or directional marks) and
             normalizes the text.</p>
         <code><pre>
@@ -43,7 +43,7 @@ I will update this extension with more utilities in the future.
     <div class="generalUtilities">
         <h3>2. Convert Seconds to Readable Time</h3>
         <p>Converts a number of seconds into a human-readable format (minutes, hours, days, months, years). Supports
-            English (<b>en</b>) and Portuguese (<b>pt</b>).</p>
+            English (<b>en</b>), Portuguese (<b>pt</b>), and French (<b>fr</b>).</p>
         <code><pre>
     seconds = 3600;
     sufix = " ago";
@@ -90,7 +90,7 @@ I will update this extension with more utilities in the future.
     </div>
 
     <div class="generalUtilities">
-    <h3>7. Format Number Utility</h3>
+    <h3>7. Convert Number to Currency Format</h3>
     <p>
         Formats a numeric value with custom thousand and decimal separators, a fixed number of decimal places, 
         and optional rounding modes. You can also prepend or append strings (prefix/suffix) to the formatted result.<br />
@@ -126,7 +126,7 @@ SAMMI.extCommand("Clear Invisible Caracteres from String", 4720640, 80, {
 
 SAMMI.extCommand("Convert Seconds to Readable Time", 4720640, 52, {
   seconds: ["Value in Seconds", 15, ""],
-  language: ["Language", 19, "en", null, ["en", "pt"]],
+  language: ["Language", 19, "en", null, ["en", "pt", "fr"]],
   sufix: ["Sufix to the Time (i.e.: ago)", 14, ""],
   saveAs: ["Save Variable As", 14, ""],
 });
@@ -296,12 +296,12 @@ function genUtilCleanInvisibleCharacters(input) {
 
 /**
  * Format elapsed time into human-readable string
- * Supports English ("en") and Portuguese ("pt")
+ * Supports English ("en"), Portuguese ("pt"), and French ("fr")
  * If you need more languages, please ask!
  *
  * @param {number} seconds - Time in seconds
  * @param {string} suffix - Optional suffix to append
- * @param {string} lang - Language code ("en" or "pt")
+ * @param {string} lang - Language code ("en", "pt" or "fr")
  * @returns {string} - Formatted time string
  */
 function genUtilFormatTimeAgo(seconds, suffix = "", lang = "en") {
@@ -313,7 +313,8 @@ function genUtilFormatTimeAgo(seconds, suffix = "", lang = "en") {
 
   const dictionary = {
     en: { minute:["minute","minutes"], hour:["hour","hours"], day:["day","days"], month:["month","months"], year:["year","years"] },
-    pt: { minute:["minuto","minutos"], hour:["hora","horas"], day:["dia","dias"], month:["mês","meses"], year:["ano","anos"] }
+    pt: { minute:["minuto","minutos"], hour:["hora","horas"], day:["dia","dias"], month:["mês","meses"], year:["ano","anos"] },
+    fr: { minute:["minute","minutes"], hour:["heure","heures"], day:["jour","jours"], month:["mois","mois"], year:["an","ans"]}
   };
 
   const dict = dictionary[lang] ?? dictionary.en;
