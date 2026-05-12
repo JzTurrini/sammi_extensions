@@ -1,0 +1,324 @@
+[extension_name]
+Simple TTS
+
+[extension_info]
+Created by JzTurrini with the purpose to read the text of the moders out loud. 
+Ideal to be used on Microsoft Edge because of neural voices alternatives, but you can use on any browser. 
+IMPORTANT: The number of voices is limited in most of them, except on Edge.
+
+[extension_version]
+2.2.0
+
+[insert_external]
+<!-- Regular Expression Remove String -->
+<style type="text/css">
+    .containerSimpleTTS {
+      margin: auto;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .containerSimpleTTS fieldset {
+      margin-bottom: 15px;
+      border: none;
+    }
+    .containerSimpleTTS label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+   .containerSimpleTTS  select, .containerSimpleTTS input, .containerSimpleTTS textarea {
+      width: 100%;
+      padding: 8px;
+      font-size: 1em;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    .containerSimpleTTS button {
+      padding: 10px 15px;
+      margin-right: 10px;
+      font-size: 1em;
+      border: none;
+      border-radius: 4px;
+      background-color: #0078D7;
+      color: white;
+      cursor: pointer;
+    }
+    .containerSimpleTTS button:hover {
+      background-color: #005fa3;
+    }
+
+    .containerSimpleTTS .stop {
+        background-color: #890000ff;
+    }
+
+    .containerSimpleTTS .stop:hover {
+        background-color: #4b0000ff;
+    }
+</style>
+<div class="containerSimpleTTS">
+    Created by <a href="https://twitter.com/JzTurrini" target="_blank" rel="noopener noreferrer">@JzTurrini</a> | 
+    <a href="https://twitch.tv/jzturrini" target="_blank" rel="noopener noreferrer">Twitch</a> | 
+    <a href="https://kick.com/jzturrini" target="_blank" rel="noopener noreferrer">Kick</a> <br />
+    Version 2.2.0 - Updated on 2026-05-12
+    <hr />
+    <form>
+      <fieldset>
+        <label for="simpleTTSVoices">Available Voices:</label>
+        <select id="simpleTTSVoices">
+          <option value="">Loading voices...</option>
+        </select>
+      </fieldset>
+      <fieldset>
+        <label for="simpleTTSRate">Voice Speed (0.1 - 10):</label>
+        <input type="number" id="simpleTTSRate" min="0.1" max="10" step="0.1" value="1">
+      </fieldset>
+      <fieldset>
+        <label for="simpleTTSText">Text:</label>
+        <textarea id="simpleTTSText" rows="4">Just an example of a simple text.</textarea>
+      </fieldset>
+      <button type="button" id="simpleTTS-test">Test Voice</button>
+      <button class="stop" type="button" id="simpleTTS-stop">Stop Speech</button>
+    </form>
+    <hr />
+    <div>
+        <h2>How to Use the Simple TTS</h2>
+        <p>This extension will use the motor of your browser to read and speak your text. Microsoft Edge have better voices and more options for you to choose, but it will work on all browsers.</p>
+        <ul>
+            <li><strong>Select a Voice:</strong> Choose one of the available voices from the dropdown menu. Voices may vary depending on your browser and system.</li>
+            <li><strong>The Speed:</strong> Adjust the voice speed using the number input. Values range from <em>0.1</em> (very very very slow) to <em>10</em> (super hyper master fast). The default is <em>1</em>.</li>
+            <li><strong>Enter Your Text:</strong> Type or paste the text you want to hear spoken aloud into the text area.</li>
+            <li><strong>Test the Voice:</strong> Click the <em>“Test Voice”</em> button to hear your selected voice read the text at the chosen speed.</li>
+            <li><strong>Stop Speech:</strong> If the voice is currently speaking and you want to interrupt it, click the <em>“Stop Speech”</em> button.</li>
+        </ul>
+        <p><strong>Note:</strong> Some voices may take a moment to load. If no voices appear, try refreshing the page or installing additional voice packages on your Windows system.</p>
+        <p><strong>Note 2:</strong> You can use this in any browser you want, however, it will have more voices available if you open it on Microsoft Edge.</p>
+        <hr />
+        <h4>Simple TTS</h4>
+        <p>Use this command to read a text out loud with the selected voice and speed.</p>
+        <h4>Simple TTS With Callback</h4>
+        <p>This command is similar to "Simple TTS" but includes additional functionality. You can specify a button name to trigger when the speech starts and a variable to set when the speech completes.</p>
+        <p>Only the voice, the speed and the text are required, even if you use this option. You can both callbacks (on start of each line and on end of whole TTS).</p>
+        <h4>Estimate TTS Time (in MS)</h4>
+        <p>This command estimates the time it will take to read a given text aloud at a specified speed. The estimated time is returned in milliseconds and can be saved to a variable.</p>
+        <p><em><strong>Note:</strong> This is just an estimation and the actual time may vary based on several factors, like language, speed or even the voice actor you choose.</em></p>
+        <h4>Simple TTS Actions</h4>
+        <p>This command allows you to perform specific actions related to the text-to-speech functionality or the bridge, such as stopping the current speech or refreshing the page. This was created
+        because I wanted to have a way to refresh the bridge from time to time or stop the TTS whenever needed.</p>
+    </div>
+    <!-- Javascript for Simple TTS -->
+    <script type="text/javascript">
+    (function simpleTTSMain(){
+        let simpleTTSMediaRecorder;
+        let simpleTTSAudioChunks = [];
+
+        function simpleTTSPopulateVoiceList(voiceNames) {
+            const voiceSelect = document.getElementById('simpleTTSVoices');
+            voiceSelect.innerHTML = '';
+            const allVoices = window.speechSynthesis.getVoices();
+
+            voiceNames.forEach((name) => {
+                const voiceObj = allVoices.find(v => v.name === name);
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = voiceObj
+                    ? `${voiceObj.name} (${voiceObj.lang})`
+                    : name;
+                voiceSelect.appendChild(option);
+            });
+        }
+
+        function simpleTTSHandleTestVoice() {
+            const selectedVoiceName = document.getElementById('simpleTTSVoices').value;
+            const rate = parseFloat(document.getElementById('simpleTTSRate').value);
+            const text = document.getElementById('simpleTTSText').value;
+            simpleTTSReadTextOutLoud(text, selectedVoiceName, rate);
+        }
+
+        function simpleTTSStopTestSpeech() {
+            window.speechSynthesis.cancel();
+            console.log("🛑 TTS stopped by stopSpeech().");
+        }
+
+        // Attach listeners.
+        document.getElementById('simpleTTS-test')
+            .addEventListener("click", simpleTTSHandleTestVoice);
+        document.getElementById('simpleTTS-stop')
+            .addEventListener("click", simpleTTSStopTestSpeech);
+
+        // Expose populate for external command.
+        window.simpleTTSPopulateVoiceList = simpleTTSPopulateVoiceList;
+    })();
+    </script>
+</div>
+
+[insert_command]
+simpleTTSGetVoicesAvailable().then(function(data) {
+    // This will populate the voices when the extension is loaded. It will be used for the bridge.
+    simpleTTSPopulateVoiceList(data.voices);
+    
+	SAMMI.extCommand("Simple TTS", 3355443, 80, {
+		stringToRead: ["String To Read Out Loud", 0, ""],
+		voiceToRead: ["Voice List", 19, '', null, data.voices],
+		textSpeed: ["Voice Speed (0.1 - 10)", 14, "1"],
+	});
+    SAMMI.extCommand("Simple TTS With Callback", 3355443, 80, {
+		stringToRead: ["String", 0, ""],
+		voiceToRead: ["Voice", 19, '', null, data.voices],
+		textSpeed: ["Voice Speed (0.1 - 10)", 14, "1"],
+        triggerBtnStarting: ["Trigger BTN on Start", 14, ""],
+        saveCallbackAs: ["Complete Callback", 14, ""],
+	});
+
+}).catch(function(error) {
+  console.error("Error trying to get the voices:", error);
+});
+
+SAMMI.extCommand("Estimate TTS Time (in MS)", 3355443, 80, {
+  stringToRead: ["String To Read Out Loud", 0, ""],
+  textSpeed: ["Voice Speed (0.1 - 10)", 14, "1"],
+  saveValueAs: ["Save Variable As", 14, ""],
+});
+SAMMI.extCommand("Simple TTS Actions", 3355443, 52, {
+  action: ["Action List", 19, 'Stop TTS', null, ['Stop TTS', 'Refresh Bridge']],
+});
+
+[insert_hook]
+case "Simple TTS":{
+	simpleTTSReadTextOutLoud(SAMMIJSON.stringToRead, SAMMIJSON.voiceToRead, SAMMIJSON.textSpeed);
+}break
+case "Simple TTS With Callback":{
+	simpleTTSReadTextOutLoud(SAMMIJSON.stringToRead,SAMMIJSON.voiceToRead, SAMMIJSON.textSpeed, () => {
+        // Complete Callback
+        SAMMI.setVariable(SAMMIJSON.saveCallbackAs, true, SAMMIJSON.FromButton);
+    }, (index, currentText) => {
+        // Starting Callback
+        SAMMI.triggerExt(SAMMIJSON.triggerBtnStarting, { "index": index, "currentText": currentText });
+    });
+}break
+case "Estimate TTS Time (in MS)":{
+    const estimation = simpleTTSEstimateSpeechDuration(SAMMIJSON.stringToRead, SAMMIJSON.textSpeed);
+    SAMMI.setVariable(SAMMIJSON.saveValueAs, estimation, SAMMIJSON.FromButton);
+}break
+case "Simple TTS Actions":{
+    switch (SAMMIJSON.action) {
+        case "Stop TTS":
+            simpleTTSStopSpeech();
+            break;
+        case "Refresh Bridge":
+            simpleTTSReloadPage();
+            break;
+    }
+}break
+
+[insert_script]
+let currentUtterance = null;
+let isStoppedManually = false;
+
+function simpleTTSReadTextOutLoud(texto, voiceName, rate = 1, onCompleteCallback, onStartCallback) {
+    if (!('speechSynthesis' in window)) {
+        console.error(`'SimpleTTS:' Speech synthesis is not supported in this browser.`);
+        return;
+    }
+
+    const vozesCarregadas = function () {
+        const voices = window.speechSynthesis.getVoices();
+        const selectedVoice = voices.find(v => v.name === voiceName);
+
+        if (!selectedVoice) {
+            console.warn(`⚠️ Voice "${voiceName}" not found.`);
+            return;
+        }
+
+        const lang = selectedVoice.lang;
+        const chunks = texto.split(/\r?\n/).filter(linha => linha.trim().length > 0);
+        let index = 0;
+
+        function speakNext() {
+            if (isStoppedManually) {
+                //console.log("⏹️ Fala interrompida ou pausada.");
+                return;
+            }
+
+            if (index >= chunks.length) {
+                if (onCompleteCallback && typeof onCompleteCallback === 'function') {
+                    onCompleteCallback();
+                    setTimeout(() => {
+                        window.speechSynthesis.cancel();
+                    }, 300);
+                }
+                return;
+            }
+
+            const currentText = chunks[index];
+
+            if (onStartCallback && typeof onStartCallback === 'function') {
+                onStartCallback(index, currentText);
+            }
+
+            currentUtterance = new SpeechSynthesisUtterance(currentText);
+            currentUtterance.lang = lang;
+            currentUtterance.voice = selectedVoice;
+            currentUtterance.rate = rate;
+
+            currentUtterance.onend = function (event) {
+                const elapsed = Number(event.elapsedTime.toFixed(0));
+                if (elapsed < 100) {
+                    console.warn(`⚠️ 'SimpleTTS:' This line was ignored or it failed: "${currentText}"`);
+                }
+                index++;
+                speakNext();
+            };
+
+            window.speechSynthesis.speak(currentUtterance);
+        }
+
+        isStoppedManually = false;
+        speakNext();
+    };
+
+    if (window.speechSynthesis.getVoices().length) {
+        vozesCarregadas();
+    } else {
+        window.speechSynthesis.onvoiceschanged = vozesCarregadas;
+    }
+}
+
+function simpleTTSStopSpeech() {
+    isStoppedManually = true;
+    window.speechSynthesis.cancel();
+    console.log("🛑 'SimpleTTS:' TTS stopped by stopSpeech().");
+}
+
+// It will return the voices available in the browser
+function simpleTTSGetVoicesAvailable() {
+    return new Promise(function(resolve, reject) {
+        let allVoices = [];
+        window.speechSynthesis.onvoiceschanged = function() {
+            var voices = window.speechSynthesis.getVoices();
+            voices.forEach(function(voice, index) {
+                allVoices.push(voice.name);
+            });
+            resolve({
+                voices: allVoices
+            });
+        };
+    });
+}
+
+function simpleTTSEstimateSpeechDuration(text, rate = 1) {
+    const words = text.trim().split(/\s+/).length;
+    const baseWPM = 172;
+    const adjustedWPM = baseWPM * rate;
+    const baseDurationMs = (words / adjustedWPM) * 60 * 1000;
+    const punctuationPauseMs = (text.match(/\.\.\.|[.?!]/g) || []).length * 500;
+    const result = baseDurationMs + punctuationPauseMs;
+    console.log(`'SimpleTTS:' Estimated speech duration (ms):`, Number(result.toFixed(0)));
+    return Number(result.toFixed(0));
+}
+
+function simpleTTSReloadPage() {
+  window.location.reload();
+}
+
+[insert_over]

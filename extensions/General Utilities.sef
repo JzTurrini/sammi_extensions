@@ -1,0 +1,576 @@
+[extension_name]
+General Utilities
+
+[extension_info]
+Created by JzTurrini with the purpose to have simple utilities functions for SAMMI.
+I will update this extension with more utilities in the future.
+
+[extension_version]
+1.1.0
+
+[insert_external]
+<div id="GeneralUtilityJz">
+    <style>
+        .generalUtilities {
+            margin-bottom: 30px;
+        }
+
+        .generalUtilities code pre {
+            font-size: 16px;
+        }
+
+        .generalUtilities .example {
+            color: #16a085;
+            font-weight: bold;
+        }
+    </style>
+    Created by <a href="https://twitter.com/JzTurrini" target="_blank" rel="noopener noreferrer">@JzTurrini</a> |
+    <a href="https://twitch.tv/jzturrini" target="_blank" rel="noopener noreferrer">Twitch</a> |
+    <a href="https://kick.com/jzturrini" target="_blank" rel="noopener noreferrer">Kick</a> <br />
+    Version 1.1.0 - Updated on 2026-05-12
+    <hr />
+    <p>This guide explains each custom command, what it does, and shows examples of how to use them.</p>
+
+    <div class="generalUtilities">
+        <h3>1. Clear Invisible Characters from String</h3>
+        <p>Removes invisible or non-printable characters (like zero-width spaces, BOM, or directional marks) and
+            normalizes the text.</p>
+        <code><pre>
+    string = "Hello\u200B World\uFEFF";</pre></code>
+        <p class="example">Result: "Hello World"</p>
+    </div>
+
+    <div class="generalUtilities">
+        <h3>2. Convert Seconds to Readable Time</h3>
+        <p>Converts a number of seconds into a human-readable format (minutes, hours, days, months, years). Supports
+            English (<b>en</b>) and Portuguese (<b>pt</b>).</p>
+        <code><pre>
+    seconds = 3600;
+    sufix = " ago";
+    language = "en";</pre></code>
+        <p class="example">Result: "1 hour ago"</p>
+    </div>
+
+    <div class="generalUtilities">
+        <h3>3. Friendly Short Number</h3>
+        <p>Formats large numbers into short, friendly strings using suffixes like K, M, B, etc.</p>
+        <code><pre>
+    seconds = 1500;</pre></code>
+        <p class="example">Result: "1.5K"</p>
+    </div>
+
+    <div class="generalUtilities">
+        <h3>4. Convert Seconds to DHMS</h3>
+        <p>Converts seconds into days, hours, minutes, and seconds, with zero-padding for readability.</p>
+        <code><pre>
+    seconds = 90061;</pre></code>
+        <p class="example">Result "DHMS": "01d, 01h:01m:01s"</p>
+        <p class="example">Result "Only Numbers": "01:01:01:01"</p>
+    </div>
+
+    <div class="generalUtilities">
+        <h3>5. Convert Color to OBS Format</h3>
+        <p>Converts a 24-bit BGR integer (SAMMI format) into a 32-bit unsigned RGBA integer compatible with OBS Studio.
+        </p>
+        <code><pre>
+    color = 16777215;
+    // Same as #FFFFFF (white)</pre></code>
+        <p class="example">Result: 4294967295 (white)</p>
+    </div>
+
+    <div class="generalUtilities">
+        <h3>6. Regex Return from String</h3>
+        <p>Removes all substrings from a string that don't match a given regular expression pattern. In the example
+            below the regex asked for only letters a-zA-Z and numbers 0-9.<br />
+            Because of that it will remove, for example the ã and ê and return the sting without them.</p>
+        <code><pre>
+    regex = "[^a-zA-Z0-9\s]+";
+    string = "Joãozinho e você";</pre></code>
+        <p class="example">Result: "Joozinho e voc"</p>
+    </div>
+
+    <div class="generalUtilities">
+    <h3>7. Format Number Utility</h3>
+    <p>
+        Formats a numeric value with custom thousand and decimal separators, a fixed number of decimal places, 
+        and optional rounding modes. You can also prepend or append strings (prefix/suffix) to the formatted result.<br />
+        The function supports two output formats:
+        <ul>
+            <li><b>Format 0:</b> "1.000,00" (European style)</li>
+            <li><b>Format 1:</b> "1,000.00" (US/International style)</li>
+        </ul>
+        Rounding options include:
+        <ul>
+            <li><b>Round Up:</b> Always rounds up</li>
+            <li><b>Round Down:</b> Always rounds down</li>
+            <li><b>Round Half:</b> Balanced rounding (default)</li>
+        </ul>
+    </p>
+    <code><pre>
+    // Example usage:
+    let result1 = genUtilFormatNumber(1500.555, 0, 2, "Round Half", "R$ ", "");
+    let result2 = genUtilFormatNumber(1500.555, 1, 3, "Round Down", "$", " USD");
+    </pre></code>
+    <p class="example">
+        Result 1: "R$ 1.500,56"<br />
+        Result 2: "$1,500.555 USD"
+    </p>
+  </div>
+</div>
+
+[insert_command]
+SAMMI.extCommand("Clear Invisible Caracteres from String", 4720640, 80, {
+  string: ["String", 0, ""],
+  saveAs: ["Save Variable As", 14, ""],
+});
+
+SAMMI.extCommand("Convert Seconds to Readable Time", 4720640, 52, {
+  seconds: ["Value in Seconds", 15, ""],
+  language: ["Language", 19, "en", null, ["en", "pt"]],
+  sufix: ["Sufix to the Time (i.e.: ago)", 14, ""],
+  saveAs: ["Save Variable As", 14, ""],
+});
+
+SAMMI.extCommand("Friendly Short Number", 4720640, 52, {
+  number: ["Number (e.g. 1500 = 1.5k)", 15, ""],
+  saveAs: ["Save Variable As", 14, ""],
+});
+
+SAMMI.extCommand("Convert Seconds to DHMS", 4720640, 52, {
+  seconds: ["Value in Seconds", 15, ""],
+  outputFormat: ["Output Format", 19, "DHMS", null, ["DHMS", "Only Numbers"]],
+  saveAs: ["Save Variable As", 14, ""],
+});
+
+SAMMI.extCommand("Convert Color to OBS Format", 4720640, 52, {
+  colour: ["Pick the Color", 17, 3355443],
+  saveAs: ["Save Variable As", 14, ""],
+});
+
+SAMMI.extCommand("Regex Return from String", 4720640, 80, {
+  string: ["String", 0, ""],
+  regex: ["Regular Expression (Don't include the // around)", 14, ""],
+  saveAs: ["Save Variable As", 14, ""],
+});
+
+SAMMI.extCommand("Convert Number to Currency Format", 4720640, 52, {
+  number: ["Number (int or float)", 15, ""],
+  outFormat: ["Return Format", 18, 0, null, ["1.000,00", "1,000.00"]],
+  decimals: ["Number of decimals (int)",  14, "2"],
+  rounding: ["Rounding", 19, "Round Half", null, ["Round Up", "Round Half", "Round Down"]],
+  prefix: ["Prefix", 14, ""],
+  suffix: ["Suffix", 14, ""],
+  saveAs: ["Save Variable As", 14, ""],
+});
+
+// Calling the main function.
+generalUtilities();
+
+[insert_hook]
+// This is the only hook needed, as all commands are handled inside the main function using listeners.
+// This is here because I use this function in a loop that executes every second and here it is faster than using listeners.
+case "Convert Seconds to Readable Time": {
+	const output = genUtilFormatTimeAgo(parseInt(SAMMIJSON.seconds), SAMMIJSON.sufix, SAMMIJSON.language);
+	SAMMI.setVariable(SAMMIJSON.saveAs, output, SAMMIJSON.FromButton, SAMMIJSON.instanceId);
+}break
+
+[insert_script]
+
+function generalUtilities() {
+  // Listeners.
+  sammiclient.on("Clear Invisible Caracteres from String", (response) => {
+    const data = response.Data;
+    if (data.string === "" || !data.saveAs) {
+      SAMMI.alert(
+        `One or more of the boxes in "Clear Invisible Caracteres from String" empty/undefined (button ${data.FromButton})`
+      );
+    } else if (typeof data.string !== "string") {
+      SAMMI.alert(
+        `Your input needs to be a valid string (button ${data.FromButton})`
+      );
+    } else {
+      const output = genUtilCleanInvisibleCharacters(data.string);
+      SAMMI.setVariable(data.saveAs, output, data.FromButton, data.instanceId);
+    }
+  });
+
+  sammiclient.on("Friendly Short Number", (response) => {
+    const data = response.Data;
+    if (data.number === "" || !data.saveAs) {
+      SAMMI.alert(
+        `One or more boxes in "Friendly Short Number" are empty/undefined (button ${data.FromButton})`
+      );
+    } else {
+      const output = genUtilShortNumber(parseInt(data.number));
+      SAMMI.setVariable(data.saveAs, output, data.FromButton, data.instanceId);
+    }
+  });
+
+  sammiclient.on("Convert Seconds to DHMS", (response) => {
+    const data = response.Data;
+    if (data.seconds === "" || !data.saveAs) {
+      SAMMI.alert(
+        `One or more boxes in "Convert Seconds to DHMS" are empty/undefined (button ${data.FromButton})`
+      );
+    } else {
+      const output = genUtilConvertSecondsToDHMS(parseInt(data.seconds), data.outputFormat);
+      SAMMI.setVariable(data.saveAs, output, data.FromButton, data.instanceId);
+    }
+  });
+
+  sammiclient.on("Convert Color to OBS Format", (response) => {
+    const data = response.Data;
+    if (data.colour === "" || !data.saveAs) {
+      SAMMI.alert(
+        `One or more boxes in "Convert Color to OBS Format" are empty/undefined (button ${data.FromButton})`
+      );
+    } else {
+      const output = genUtilBGRIntToObsInt(parseInt(data.colour));
+      SAMMI.setVariable(data.saveAs, output, data.FromButton, data.instanceId);
+    }
+  });
+
+  sammiclient.on("Regex Return from String", (response) => {
+    const data = response.Data;
+    if (data.regex === "" || data.string === "" || !data.saveAs) {
+      SAMMI.alert(
+        `One or more boxes in "Regex Return from String" are empty/undefined (button ${data.FromButton})`
+      );
+    } else {
+      const output = genUtilRemoveRegexFromString(data.regex, data.string);
+      SAMMI.setVariable(data.saveAs, output, data.FromButton, data.instanceId);
+    }
+  });
+
+  sammiclient.on("Convert Number to Currency Format", (response) => {
+    const data = response.Data;
+    if ((data.number === "" || typeof data.number !== "number") || !data.saveAs) {
+      SAMMI.alert(
+        `One or more boxes in "Convert Number to Currency Format" are empty/undefined/invalid (button ${data.FromButton})`
+      );
+    } else {
+      const output = genUtilFormatNumber(data.number, data.outFormat, parseInt(data.decimals), data.rounding, data.prefix, data.suffix);
+      SAMMI.setVariable(data.saveAs, output, data.FromButton, data.instanceId);
+    }
+  });
+
+}
+
+/*********************/
+// ALL FUNCTIONS BELOW
+/*********************/
+
+/**
+ * Cleans a string by normalizing it to Unicode NFKC form
+ * and removing invisible or non-printable characters.
+ *
+ * The function ensures consistent Unicode representation
+ * and strips out characters that may interfere with text
+ * processing, such as zero-width spaces, directional marks,
+ * and the BOM (Byte Order Mark).
+ *
+ * Invisible characters removed include:
+ *   - U+200B to U+200F (Zero-width spaces and formatting marks)
+ *   - U+202A to U+202E (Directional formatting characters)
+ *   - U+2060 to U+206F (Invisible control characters)
+ *   - U+FEFF (Zero-width no-break space / BOM)
+ *
+ * @param {string} input - The string to be cleaned.
+ * @returns {string} A normalized string with invisible characters removed.
+ *
+ * @example
+ * cleanInvisibleCharacters("Hello\u200B World\uFEFF");
+ * "Hello World"
+ *
+ * @example
+ * cleanInvisibleCharacters("cafe\u0301");
+ * "café" (normalized to composed form)
+ */
+function genUtilCleanInvisibleCharacters(input) {
+  // Normalize to Unicode NFKC form
+  let normalized = input.normalize("NFKC");
+  // Regex for invisible characters
+  const invisibleRegex = /[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g;
+  return normalized.replace(invisibleRegex, "");
+}
+
+/**
+ * Format elapsed time into human-readable string
+ * Supports English ("en") and Portuguese ("pt")
+ * If you need more languages, please ask!
+ *
+ * @param {number} seconds - Time in seconds
+ * @param {string} suffix - Optional suffix to append
+ * @param {string} lang - Language code ("en" or "pt")
+ * @returns {string} - Formatted time string
+ */
+function genUtilFormatTimeAgo(seconds, suffix = "", lang = "en") {
+  const MINUTE = 60;
+  const HOUR = 60 * MINUTE;
+  const DAY = 24 * HOUR;
+  const MONTH = 30 * DAY;
+  const YEAR = 365 * DAY;
+
+  const dictionary = {
+    en: { minute:["minute","minutes"], hour:["hour","hours"], day:["day","days"], month:["month","months"], year:["year","years"] },
+    pt: { minute:["minuto","minutos"], hour:["hora","horas"], day:["dia","dias"], month:["mês","meses"], year:["ano","anos"] }
+  };
+
+  const dict = dictionary[lang] ?? dictionary.en;
+
+  if (seconds < MINUTE) {
+    return `${seconds}s${suffix}`;
+  } else if (seconds < HOUR) {
+    const minutes = Math.floor(seconds / MINUTE);
+    return minutes === 1
+      ? `1 ${dict.minute[0]}${suffix}`
+      : `${minutes} ${dict.minute[1]}${suffix}`;
+  } else if (seconds < DAY) {
+    const hours = Math.floor(seconds / HOUR);
+    return hours === 1
+      ? `1 ${dict.hour[0]}${suffix}`
+      : `${hours} ${dict.hour[1]}${suffix}`;
+  } else if (seconds < MONTH) {
+    const days = Math.floor(seconds / DAY);
+    return days === 1
+      ? `1 ${dict.day[0]}${suffix}`
+      : `${days} ${dict.day[1]}${suffix}`;
+  } else if (seconds < YEAR) {
+    const months = Math.floor(seconds / MONTH);
+    return months === 1
+      ? `1 ${dict.month[0]}${suffix}`
+      : `${months} ${dict.month[1]}${suffix}`;
+  } else {
+    const years = Math.floor(seconds / YEAR);
+    return years === 1
+      ? `1 ${dict.year[0]}${suffix}`
+      : `${years} ${dict.year[1]}${suffix}`;
+  }
+}
+
+/**
+ * Converts a number of seconds into a formatted string
+ * representing days, hours, minutes, and seconds.
+ *
+ * The function calculates the breakdown of total seconds
+ * into days, hours, minutes, and remaining seconds, then
+ * formats each value with two digits (zero-padded).
+ *
+ * Output format:
+ *   "DDd, HHh:MMm:SSs"
+ *
+ * @param {number} seconds - The total number of seconds to convert.
+ * @param {string} outputFormat - The desired output format ("DHMS" or "Only Numbers").
+ * @returns {string} A formatted string with days, hours, minutes, and seconds.
+ *
+ * @example
+ * convertSecondsToDHMS(3661);
+ * "00d, 01h:01m:01s"
+ *
+ * @example
+ * convertSecondsToDHMS(90061);
+ * "01d, 01h:01m:01s"
+ *
+ * @example
+ * convertSecondsToDHMS(172800);
+ * "02d, 00h:00m:00s"
+ */
+function genUtilConvertSecondsToDHMS(seconds, outputFormat = "DHMS") {
+  // Calculate days, hours, minutes and seconds.
+  const days = Math.floor(seconds / (24 * 3600));
+  seconds %= 24 * 3600;
+
+  const hours = Math.floor(seconds / 3600);
+  seconds %= 3600;
+
+  const minutes = Math.floor(seconds / 60);
+  seconds %= 60;
+
+  // Section to garantee two digits.
+  const pad = (num) => String(num).padStart(2, "0");
+
+  // Retorna somente os números no formato DD:HH:MM:SS
+  if (outputFormat === "Only Numbers") {
+    return `${pad(days)}:${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  }
+
+  // Retorna no formato DDd, HHh:MMm:SSs
+  return `${pad(days)}d, ${pad(hours)}h:${pad(minutes)}m:${pad(seconds)}s`;
+}
+
+/**
+ * Converts a large number into a short, human-readable string
+ * using common unit suffixes (K, M, B, T, etc.).
+ *
+ * The function scales the number down by powers of 1000 and
+ * appends the appropriate unit suffix. If the number exceeds
+ * the predefined units, it falls back to scientific notation.
+ *
+ * Supported suffixes:
+ *   - K  (thousand)
+ *   - M  (million)
+ *   - B  (billion)
+ *   - T  (trillion)
+ *   - Q  (quadrillion)
+ *   - Qi (quintillion)
+ *   - Sx (sextillion)
+ *   - Sp (septillion)
+ *   - Oc (octillion)
+ *   - No (nonillion)
+ *   - Dc (decillion)
+ *
+ * @param {number} num - The number to format.
+ * @returns {string} A shortened string representation of the number.
+ *
+ * @example
+ * shortNumber(950);
+ * "950"
+ *
+ * @example
+ * shortNumber(1500);
+ * "1.5K"
+ *
+ * @example
+ * shortNumber(2500000);
+ * "2.5M"
+ *
+ * @example
+ * shortNumber(1234567890);
+ * "1.2B"
+ *
+ * @example
+ * shortNumber(1e15);
+ * "1.0Q"
+ *
+ * @example
+ * shortNumber(1e30);
+ * "1.0e30" (scientific notation fallback)
+ */
+function genUtilShortNumber(num) {
+  const units = ["", "K", "M", "B", "T", "Q", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+  const i = Math.floor(Math.log10(Math.abs(num)) / 3);
+  const scaled = num / Math.pow(1000, i);
+
+  if (i < units.length) {
+    return Number(scaled.toFixed(1)) + units[i];
+  } else {
+    return Number(scaled.toFixed(1)) + "e" + i * 3;
+  }
+}
+
+/**
+ * Converts a 24-bit BGR integer SAMMI Colour into a 32-bit unsigned RGBA integer
+ * compatible with OBS  Studio (Open Broadcaster Software).
+ *
+ * The input integer is expected in BGR format:
+ *   - Lowest 8 bits: Blue
+ *   - Middle 8 bits: Green
+ *   - Highest 8 bits: Red
+ *
+ * The function extracts each color channel, sets the alpha channel
+ * to 0xFF (fully opaque), and returns a 32-bit unsigned integer
+ * in the format 0xAARRGGBB.
+ *
+ * @param {number} bgrInt - A 24-bit integer representing a color in BGR order.
+ * @returns {number} A 32-bit unsigned integer representing the color in RGBA format.
+ *
+ */
+function genUtilBGRIntToObsInt(bgrInt) {
+  const b = bgrInt & 0xff;
+  const g = (bgrInt >> 8) & 0xff;
+  const r = (bgrInt >> 16) & 0xff;
+
+  const a = 0xff; // Fix Alfa
+
+  // Create integer 32-bit and force unsigned
+  return ((a << 24) | (r << 16) | (g << 8) | b) >>> 0;
+}
+
+/**
+ * Removes all substrings from a given string that match
+ * a provided regular expression pattern.
+ *
+ * The function builds a global regular expression from
+ * the input pattern and replaces all matches with an
+ * empty string, effectively cleaning the input.
+ *
+ * @param {string} regex - The regex pattern (as a string) used to match substrings to remove.
+ * @param {string} string - The original string to process.
+ * @returns {string} A new string with all regex matches removed.
+ *
+ * @example
+ * - Remove all digits from the string
+ * removeRegexFromString("\\d+", "User123Name");
+ * "UserName"
+ *
+ * @example
+ * - Remove all spaces from the string
+ * removeRegexFromString("\\s+", "Hello World");
+ * "HelloWorld"
+ *
+ * @example
+ * - Remove all vowels from the string
+ * removeRegexFromString("[aeiou]", "Javascript");
+ * "Jvscrpt"
+ */
+function genUtilRemoveRegexFromString(regex, string) {
+	const regexVariable = new RegExp(regex, 'g');
+	return newString = string.replace(regexVariable, '');
+}
+
+/**
+ * Format a number with custom thousand and decimal separators,
+ * fixed number of decimal places, and rounding options.
+ *
+ * @param {number} amount - The numeric value to format.
+ * @param {number} outFormat - [0 for 1.000,00] and [1 for 1,000.00].
+ * @param {number} decimals - Number of digits after the decimal separator.
+ * @param {string} rounding - Rounding mode: "up", "down", or "half" (balanced).
+ * @param {string} prefix - Optional string to prepend to the formatted number.
+ * @param {string} suffix - Optional string to append to the formatted number.
+ * @returns {string} - Formatted number as a string.
+ */
+function genUtilFormatNumber(amount, outFormat = 0, decimals = 2, rounding = "Round Half", prefix = "", suffix = "") {
+    // Step 1: Choose rounding method
+    let factor = Math.pow(10, decimals);
+    let rounded;
+
+    // Setting the return types based on user selection.
+    const formatTypes = [
+        { thousandSep: '.', decimalSep: ',' }, // Format 0: "1.000,00"
+        { thousandSep: ',', decimalSep: '.' }  // Format 1: "1,000.00"
+    ];
+    const thousandSep = formatTypes[outFormat].thousandSep;
+    const decimalSep = formatTypes[outFormat].decimalSep;
+
+    if (rounding === "Round Up") {
+        // Always round up
+        rounded = Math.ceil(amount * factor) / factor;
+    } else if (rounding === "Round Down") {
+        // Always round down
+        rounded = Math.floor(amount * factor) / factor;
+    } else {
+        // Balanced rounding (default: Math.round)
+        rounded = Math.round(amount * factor) / factor;
+    }
+
+    // Step 2: Split integer and decimal parts
+    let parts = rounded.toString().split(".");
+    let integerPart = parts[0];
+    let decimalPart = parts[1] || "";
+
+    // Step 3: Add thousand separators
+    integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandSep);
+
+    // Step 4: Pad decimal part with zeros if needed
+    while (decimalPart.length < decimals) {
+        decimalPart += "0";
+    }
+
+    // Step 5: Construct final formatted string
+    return decimals > 0 ? `${prefix}${(integerPart + decimalSep + decimalPart)}${suffix}` : `${prefix}${integerPart}${suffix}`;
+}
+
+
+
+[insert_over]
