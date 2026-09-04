@@ -90,7 +90,17 @@ I will update this extension with more utilities in the future.
     </div>
 
     <div class="generalUtilities">
-    <h3>7. Convert Number to Currency Format</h3>
+        <h3>7. String Split Lines to Array</h3>
+        <p>Splits a string with multiple lines into an array of strings.</p>
+        <code><pre>
+    string = "Line 1
+    Line 2
+    Line 3";</pre></code>
+        <p class="example">Result: ["Line 1", "Line 2", "Line 3"]</p>
+    </div>
+
+    <div class="generalUtilities">
+    <h3>8. Convert Number to Currency Format</h3>
     <p>
         Formats a numeric value with custom thousand and decimal separators, a fixed number of decimal places, 
         and optional rounding modes. You can also prepend or append strings (prefix/suffix) to the formatted result.<br />
@@ -115,6 +125,15 @@ I will update this extension with more utilities in the future.
         Result 1: "R$ 1.500,56"<br />
         Result 2: "$1,500.555 USD"
     </p>
+  </div>
+
+  <div class="generalUtilities">
+    <h3>9. Friendly Date/Time</h3>
+    <p>Formats seconds into a human-readable relative time string (e.g., "5 minutes ago").</p>
+    <code><pre>
+    seconds = 300;
+    </pre></code>
+    <p class="example">Result: "5 minutes ago"</p>
   </div>
 </div>
 
@@ -153,6 +172,18 @@ SAMMI.extCommand("Regex Return from String", 4720640, 80, {
   saveAs: ["Save Variable As", 14, ""],
 });
 
+SAMMI.extCommand("Regular Expression", 4720640, 80, {
+  input: ["Regular Expression (Don't include the // around)", 14, ""],
+  string: ["String", 14, ""],
+  mode: ["Mode", 19, "Success", null, ["Success", "Match"]],
+  output: ["Save Variable As", 14, ""],
+});
+
+SAMMI.extCommand("String Split Lines to Array", 4720640, 80, {
+  string: ["String", 0, ""],
+  saveAs: ["Save Variable As", 14, ""],
+});
+
 SAMMI.extCommand("Convert Number to Currency Format", 4720640, 52, {
   number: ["Number (int or float)", 15, ""],
   outFormat: ["Return Format", 18, 0, null, ["1.000,00", "1,000.00"]],
@@ -161,6 +192,13 @@ SAMMI.extCommand("Convert Number to Currency Format", 4720640, 52, {
   prefix: ["Prefix", 14, ""],
   suffix: ["Suffix", 14, ""],
   saveAs: ["Save Variable As", 14, ""],
+});
+
+SAMMI.extCommand("Friendly Date/Time", 4720640, 52, {
+	seconds: ["Value in Seconds", 14, ""],
+  sufix: ["Sufix to the Time (i.e.: ago)", 14, ""],
+  language: ["Language", 19, "en", null, ["en", "pt-br"]],
+	saveAs: ["Save Variable As", 14, ""]
 });
 
 // Calling the main function.
@@ -242,6 +280,18 @@ function generalUtilities() {
     }
   });
 
+  sammiclient.on("Regular Expression", (response) => {
+    const data = response.Data;
+    if (data.input === "" || data.string === "" || !data.output) {
+      SAMMI.alert(
+        `One or more boxes in "Regular Expression" are empty/undefined (button ${data.FromButton})`
+      );
+    } else {
+      const output = genUtilCheckRegex(data.input, data.string, data.mode);
+      SAMMI.setVariable(data.output, output, data.FromButton, data.instanceId);
+    }
+  });
+
   sammiclient.on("Convert Number to Currency Format", (response) => {
     const data = response.Data;
     if ((data.number === "" || typeof data.number !== "number") || !data.saveAs) {
@@ -254,6 +304,34 @@ function generalUtilities() {
     }
   });
 
+  sammiclient.on("String Split Lines to Array", (response) => {
+    const data = response.Data;
+    if (data.string === "" || !data.saveAs) {
+      SAMMI.alert(
+        `One or more boxes in "String Split Lines to Array" are empty/undefined (button ${data.FromButton})`
+      );
+    } else {
+      const output = genUtilsBreakStringByLines(data.string);
+      SAMMI.setVariable(data.saveAs, output, data.FromButton, data.instanceId);
+    }
+  });
+
+  sammiclient.on("Friendly Date/Time", (response) => {
+    const data = response.Data;
+    if (data.seconds === "" || !data.saveAs) {
+      SAMMI.alert(
+        `One or more boxes in "Friendly Date/Time" are empty/undefined (button ${data.FromButton})`
+      );
+    } else {
+      let output = "";
+      if (data.language === "en") {
+        output = genUtilsFormatTimeAgo(parseInt(data.seconds), data.sufix);
+      } else if (data.language == "pt-br") {
+        output = genUtilsFormatTimeAgoPTBR(parseInt(data.seconds), data.sufix);
+      }
+      SAMMI.setVariable(data.saveAs, output, data.FromButton, data.instanceId);
+    }
+  });
 }
 
 /*********************/
@@ -452,7 +530,9 @@ function genUtilShortNumber(num) {
   const i = Math.floor(Math.log10(Math.abs(num)) / 3);
   const scaled = num / Math.pow(1000, i);
 
-  if (i < units.length) {
+  if (num == 0) {
+    return "0";
+  } else if (i < units.length) {
     return Number(scaled.toFixed(1)) + units[i];
   } else {
     return Number(scaled.toFixed(1)) + "e" + i * 3;
@@ -520,6 +600,42 @@ function genUtilRemoveRegexFromString(regex, string) {
 }
 
 /**
+ * Evaluates a string using a provided regular expression pattern.
+ *
+ * Modes:
+ * - "Success": Tests whether the regex matches the string.
+ *              Returns 1 for match, 0 for no match.
+ *
+ * - "Match": Uses matchAll() to return an array containing
+ *            all matches exactly as captured by the regex,
+ *            including full matches and groups.
+ *
+ * @param {string} regex - The regex pattern (as a string).
+ * @param {string} string - The string to evaluate.
+ * @param {string} mode - Operation mode: "Success" or "Match".
+ * @returns {number|Array<Array<string>>} 1/0 for "Success",
+ *          array of match arrays for "Match".
+ */
+function checkRegex(regex, string, mode) {
+  const pattern = new RegExp(regex, "g");
+
+  if (mode === "Success") {
+    return pattern.test(string) ? 1 : 0;
+  }
+
+  if (mode === "Match") {
+    const results = [];
+    const iterator = string.matchAll(pattern);
+
+    for (const match of iterator) {
+      results.push(match);
+    }
+
+    return results;
+  }
+}
+
+/**
  * Format a number with custom thousand and decimal separators,
  * fixed number of decimal places, and rounding options.
  *
@@ -572,6 +688,74 @@ function genUtilFormatNumber(amount, outFormat = 0, decimals = 2, rounding = "Ro
     return decimals > 0 ? `${prefix}${(integerPart + decimalSep + decimalPart)}${suffix}` : `${prefix}${integerPart}${suffix}`;
 }
 
+/**
+ * Formats a time difference in seconds into a human-readable string.
+ *
+ * @param {number} seconds - The time difference in seconds.
+ * @param {string} sufix - The suffix to append to the formatted string.
+ * @returns {string} The formatted time difference string.
+ */
+function genUtilsFormatTimeAgo(seconds, sufix = '') {
+  const MINUTE = 60;
+  const HOUR = 60 * MINUTE;
+  const DAY = 24 * HOUR;
+  const MONTH = 30 * DAY;
+  const YEAR = 365 * DAY;
+  sufix = sufix || '';
 
+  if (seconds < MINUTE) {
+    return `${seconds}s${sufix}`;
+  } else if (seconds < HOUR) {
+    const minutes = Math.floor(seconds / MINUTE);
+    return minutes === 1 ? `1 minute${sufix}` : `${minutes} minutes${sufix}`;
+  } else if (seconds < DAY) {
+    const hours = Math.floor(seconds / HOUR);
+    return hours === 1 ? `1 hour${sufix}` : `${hours} hours${sufix}`;
+  } else if (seconds < MONTH) {
+    const days = Math.floor(seconds / DAY);
+    return days === 1 ? `1 day${sufix}` : `${days} days${sufix}`;
+  } else if (seconds < YEAR) {
+    const months = Math.floor(seconds / MONTH);
+    return months === 1 ? `1 month${sufix}` : `${months} months${sufix}`;
+  } else {
+    const years = Math.floor(seconds / YEAR);
+    return years === 1 ? `1 year${sufix}` : `${years} years${sufix}`;
+  }
+}
+
+/**
+ * Formats a time difference in seconds into a human-readable string in Brazilian Portuguese.
+ *
+ * @param {number} seconds - The time difference in seconds.
+ * @param {string} sufix - The suffix to append to the formatted string.
+ * @returns {string} The formatted time difference string.
+ */
+function genUtilsFormatTimeAgoPTBR(seconds, sufix = '') {
+  const MINUTE = 60;
+  const HOUR = 60 * MINUTE;
+  const DAY = 24 * HOUR;
+  const MONTH = 30 * DAY;
+  const YEAR = 365 * DAY;
+  sufix = sufix || '';
+
+  if (seconds < MINUTE) {
+    return `${seconds}s${sufix}`;
+  } else if (seconds < HOUR) {
+    const minutes = Math.floor(seconds / MINUTE);
+    return minutes === 1 ? `1 minuto${sufix}` : `${minutes} minutos${sufix}`;
+  } else if (seconds < DAY) {
+    const hours = Math.floor(seconds / HOUR);
+    return hours === 1 ? `1 hora${sufix}` : `${hours} horas${sufix}`;
+  } else if (seconds < MONTH) {
+    const days = Math.floor(seconds / DAY);
+    return days === 1 ? `1 dia${sufix}` : `${days} dias${sufix}`;
+  } else if (seconds < YEAR) {
+    const months = Math.floor(seconds / MONTH);
+    return months === 1 ? `1 mês${sufix}` : `${months} meses${sufix}`;
+  } else {
+    const years = Math.floor(seconds / YEAR);
+    return years === 1 ? `1 ano${sufix}` : `${years} anos${sufix}`;
+  }
+}
 
 [insert_over]
