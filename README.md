@@ -48,3 +48,4 @@ If you find any bug or want to ask for a new feature/change, please open a ticke
 ## Casterlabs Caffeinated
 
 - It will look for an Websocket to connect and receive requests from Casterlabs Caffeinated. For this to work you will need to add the plugin on Casterlabs (also available on this repo) to create the server.
+- Casterlabs Website: https://casterlabs.co/
