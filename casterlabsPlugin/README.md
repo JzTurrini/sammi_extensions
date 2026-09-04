@@ -1,0 +1,2 @@
+This file is a plugin for Websocket on Casterlabs. Download and use it to load the websocket server on **Casterlabs Caffeinated**.
+The **SAMMI Core** extension is available on the extension folder on this repo.

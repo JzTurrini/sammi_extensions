@@ -1,0 +1,225 @@
+[extension_name]
+Casterlabs Caffeinated
+
+[extension_info]
+Created by JzTurrini to receive one-way events from Casterlabs Caffeinated through a WebSocket connection and exposes them as SAMMI Core extension triggers.
+
+[extension_version]
+1.0.0
+
+[insert_external]
+<style type="text/css">
+  pre > code {
+    display: block;
+    background: #252525;
+    padding: 1.33em;
+    border-radius: 0.33em;
+    color: #f0f0f0;
+  }
+</style>
+
+<!-- Regular Expression Remove String -->
+<h3>Casterlabs Caffeinated - Websocket Integration</h3>
+Created by <a href="https://twitter.com/JzTurrini" target="_blank" rel="noopener noreferrer">@JzTurrini</a> | 
+<a href="https://twitch.tv/jzturrini" target="_blank" rel="noopener noreferrer">Twitch</a> | 
+<a href="https://kick.com/jzturrini" target="_blank" rel="noopener noreferrer">Kick</a> <br />
+Version 1.1.0 - Updated on 2026-09-04
+<hr />
+
+<table style="border-collapse: collapse">
+  <tr>
+    <td style="padding: 5px 20px; border: 1px solid white">Status</td>
+    <td style="padding: 5px 20px; border: 1px solid white">
+      <span id="casterlabsCaffeinatedStatusLabel" style="color: red">
+        Disconnected
+      </span>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 5px 20px; border: 1px solid white">WebSocket</td>
+    <td style="padding: 5px 20px; border: 1px solid white">
+      <span id="casterlabsCaffeinatedUrlLabel">
+        ws://127.0.0.1:9880/sammi-bridge
+      </span>
+    </td>
+  </tr>
+</table>
+
+<hr />
+<p>Inside Casterlabs Caffeinated, go to Settings > Plugins > load the plugin <strong>"original-caffeinated-sammi-bridge-1.0.0.jar"</strong>.<br />
+This will load a Websocket where Casterlabs Caffeinated is the server and this Extension makes SAMMI CORE the client.<br />
+The server and the client will send and listen to the Websocket informed above.</p>
+
+<p>Now, go to Casterlabs Caffeinated and click on Chat Bot, add a new command, for example: When someone from Tiktok runs !something execute...</p>
+<p>Add this code to the box below and change it the way you want.</p>
+<p><pre><code>
+Plugins.callServiceMethod(
+    "com.sammi.caffeinated.bridge",
+    "sammi",
+    "sendEvent",
+    [
+        "EVENT_NAME_FOR_YOUR_TRIGGER",
+        JSON.stringify({
+            payload: event
+        })
+    ]
+);
+</code></pre></p>
+
+<p>Now, on SAMMI CORE side, create a new button and add this as a Extension Trigger: <strong>Casterlabs Caffeinated: EVENT_NAME_FOR_YOUR_TRIGGER</strong></p>
+<p>Remember, the <strong>EVENT_NAME_FOR_YOUR_TRIGGER</strong> must be the same as the one you set in Casterlabs Caffeinated and you can call it anything you like.</p>
+<p>Now, when someone runs the command on Tiktok, it will trigger the button you created on SAMMI CORE, and you just need to open Casterlabs and SAMMI Bridge for this to happen.</p>
+
+[insert_command]
+
+
+[insert_hook]
+
+
+[insert_script]
+
+const CASTERLABS_SAMMI_PORT = 7373;
+const CASTERLABS_SAMMI_HOST = "127.0.0.1";
+const CASTERLABS_SAMMI_PATH = "/sammi-bridge";
+const CASTERLABS_SAMMI_RECONNECT_INTERVAL = 5000; // Every 5 seconds
+
+window.casterlabsSammiWs = null;
+window.casterlabsSammiReconnectTimer = null;
+
+window.addEventListener("load", (event) => {
+  console.log("Casterlabs WS Event", event);
+  casterlabsSammiConnect();
+});
+
+/*
+ * Delays execution for a specified number of milliseconds.
+ * @param {number} ms - The number of milliseconds to delay.
+ * @returns {Promise<void>} A promise that resolves after the delay.
+ */
+function casterlabsSammiDelay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Connects to the Casterlabs Caffeinated WebSocket.
+ */
+async function casterlabsSammiConnect() {
+  if (window.casterlabsSammiWs && (window.casterlabsSammiWs.readyState === WebSocket.OPEN || window.casterlabsSammiWs.readyState === WebSocket.CONNECTING)) {
+    return;
+  }
+
+  const wsUrl = `ws://${CASTERLABS_SAMMI_HOST}:${CASTERLABS_SAMMI_PORT}${CASTERLABS_SAMMI_PATH}`;
+
+  console.log(`[Casterlabs Caffeinated] Connecting to ${wsUrl}`);
+
+  window.casterlabsSammiWs = new WebSocket(wsUrl);
+
+  window.casterlabsSammiWs.onopen = () => {
+    console.log("[Casterlabs Caffeinated] Connected!");
+    SAMMI.alert("[Casterlabs Caffeinated] Connected!");
+    casterlabsSammiSetStatus(true, wsUrl);
+  };
+
+  window.casterlabsSammiWs.onclose = async () => {
+    console.log("[Casterlabs Caffeinated] Disconnected.");
+    casterlabsSammiSetStatus(false, wsUrl);
+    window.casterlabsSammiWs = null;
+
+    if (window.casterlabsSammiReconnectTimer) {
+      return;
+    }
+
+    window.casterlabsSammiReconnectTimer = setTimeout(() => {
+      window.casterlabsSammiReconnectTimer = null;
+      casterlabsSammiConnect();
+    }, CASTERLABS_SAMMI_RECONNECT_INTERVAL);
+  };
+
+  window.casterlabsSammiWs.onerror = (error) => {
+    console.error("[Casterlabs Caffeinated] WebSocket error:", error);
+  };
+
+  window.casterlabsSammiWs.onmessage = (event) => {
+    console.log(
+      "[Casterlabs Caffeinated] WebSocket message received:",
+      event.data,
+    );
+    casterlabsSammiHandleMessage(event.data);
+  };
+}
+
+/**
+ * Handles incoming WebSocket messages.
+ * @param {string} data - The message data.
+ */
+function casterlabsSammiHandleMessage(data) {
+  let eventData;
+  // Checking Json.
+  try {
+    eventData = JSON.parse(data);
+  } catch (error) {
+    console.error("[Casterlabs Caffeinated] Invalid JSON received:", data);
+    return;
+  }
+
+  // Checking data presence.
+  if (!eventData) {
+    return;
+  }
+
+  // Checking for the correct trigger
+  if (!eventData.event.includes("Casterlabs Caffeinated: ")) {
+    console.warn("[Casterlabs Caffeinated] Unknown WebSocket event:", eventData);
+    return;
+  }
+
+  // Checking for type presence.
+  const eventType = eventData.type;
+  if (typeof eventType !== "string" || eventType.length === 0) {
+    console.warn("[Casterlabs Caffeinated] Event without type:", eventData);
+    return;
+  }
+
+  // Checking payload and adjsting to avoid null or undefined.
+  let payload = eventData.payload;
+  if (payload === undefined || payload === null) {
+    payload = {};
+  }
+
+  // Informing what we received.
+  console.log("[Casterlabs Caffeinated] Event received:", eventType, payload);
+
+  // Trigger the event in SAMMI.
+  SAMMI.triggerExt(`Casterlabs Caffeinated: ${eventType}`, {
+    type: eventType,
+    data: payload
+  });
+}
+
+/**
+ * Sets the status of the Casterlabs Caffeinated connection on the bridge UI.
+ * @param {boolean} connected - Whether the client is connected.
+ * @param {string} wsUrl - The WebSocket URL.
+ */
+function casterlabsSammiSetStatus(connected, wsUrl) {
+
+  const label = document.getElementById("casterlabsCaffeinatedStatusLabel");
+  const urlLabel = document.getElementById("casterlabsCaffeinatedUrlLabel");
+
+  if (label) {
+    if (connected) {
+      label.style.color = "green";
+      label.textContent = "Connected";
+    } else {
+      label.style.color = "red";
+      label.textContent = "Disconnected";
+    }
+  }
+
+  if (urlLabel) {
+    urlLabel.textContent = wsUrl;
+  }
+}
+
+
+[insert_over]
