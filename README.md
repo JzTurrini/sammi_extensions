@@ -25,8 +25,12 @@ All Extensions and Decks Available here are Free to Use. If you want to donate a
     - Converts a 24-bit BGR integer (SAMMI format) into a 32-bit unsigned RGBA integer compatible with OBS Studio.
 - **Regex Return from String**
     - Removes all substrings from a string that don't match a given regular expression pattern.
+- **String Split Lines to Array**
+    - Splits a string with multiple lines into an array of strings, one index for each line.
 - **Convert Number to Currency Format**
     - Formats a numeric value with custom thousand and decimal separators, a fixed number of decimal places, and optional rounding modes. You can also prepend or append strings (prefix/suffix) to the formatted result.
+- **Friendly Date/Time**
+    - Formats seconds into a human-readable relative time string (e.g., "5 minutes ago").
 
 ## Simple TTS
 
