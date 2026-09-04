@@ -40,3 +40,7 @@ All Extensions and Decks Available here are Free to Use. If you want to donate a
     - This command allows you to perform specific actions related to the text-to-speech functionality, such as stopping the current speech or refreshing the page.
 
 If you find any bug or want to ask for a new feature/change, please open a ticket here on github.
+
+## Casterlabs Caffeinated
+
+- It will look for an Websocket to connect and receive requests from Casterlabs Caffeinated. For this to work you will need to add the plugin on Casterlabs (also available on this repo) to create the server.
