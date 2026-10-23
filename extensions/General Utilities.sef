@@ -6,7 +6,7 @@ Created by JzTurrini with the purpose to have simple utilities functions for SAM
 I will update this extension with more utilities in the future.
 
 [extension_version]
-1.1.0
+1.2.0
 
 [insert_external]
 <div id="GeneralUtilityJz">
@@ -82,7 +82,7 @@ I will update this extension with more utilities in the future.
         <h3>6. Regex Return from String</h3>
         <p>Removes all substrings from a string that don't match a given regular expression pattern. In the example
             below the regex asked for only letters a-zA-Z and numbers 0-9.<br />
-            Because of that it will remove, for example the ã and ê and return the sting without them.</p>
+            Because of that it will remove, for example the ã and ê and return the string without them.</p>
         <code><pre>
     regex = "[^a-zA-Z0-9\s]+";
     string = "Joãozinho e você";</pre></code>
@@ -135,6 +135,38 @@ I will update this extension with more utilities in the future.
     </pre></code>
     <p class="example">Result: "5 minutes ago"</p>
   </div>
+
+  <div class="generalUtilities">
+    <h3>10. Football Grid</h3>
+    <p>Generates a football (soccer) grid layout based on a given formation. I created this to use while connected with api-football.com. This allow me to position players on the field
+    home and away. For me, I use it in a Vertical Layout, if anyone needs it in horizontal, please open a request.
+    You will see, by the result, that it will position one element for each line, following the team formation.<br />
+    It accepts formations like 4-4-2, 4-3-3, 3-5-2, 4-2-3-1 etc. With minimum of 3 lines and maximum of 4 lines and Total of 10 Players (the goal keeper position is fixed)</p>
+    <code><pre>
+      formation: 4-4-2,
+      width: 600,
+      height: 320,
+      xStart: 1260, // At OBS Studio, where your field starts on the X axis
+      yStart: 220, // At OBS Studio, where your field starts on the Y axis
+      direction: "top-down", // top-down for Home and bottom-up for Away
+    </pre></code>
+    <p class="example">Result:</p>
+    <code><pre>
+      [ 
+        { "pos": "2:4", "x": 1292.0, "y": 220.0 }, 
+        { "pos": "2:3", "x": 1430.0, "y": 220.0 }, 
+        { "pos": "2:2", "x": 1568.0, "y": 220.0 }, 
+        { "pos": "2:1", "x": 1706.0, "y": 220.0 }, 
+        { "pos": "3:2", "x": 1421.0, "y": 300.0 }, 
+        { "pos": "3:1", "x": 1577.0, "y": 300.0 }, 
+        { "pos": "4:3", "x": 1355.0, "y": 380.0 }, 
+        { "pos": "4:2", "x": 1499.0, "y": 380.0 }, 
+        { "pos": "4:1", "x": 1643.0, "y": 380.0 }, 
+        { "pos": "5:1", "x": 1499.0, "y": 460.0 } 
+      ]
+    </pre></code>
+    
+    </div>
 </div>
 
 [insert_command]
@@ -198,6 +230,16 @@ SAMMI.extCommand("Friendly Date/Time", 4720640, 52, {
 	seconds: ["Value in Seconds", 14, ""],
   sufix: ["Sufix to the Time (i.e.: ago)", 14, ""],
   language: ["Language", 19, "en", null, ["en", "pt-br"]],
+	saveAs: ["Save Variable As", 14, ""]
+});
+
+SAMMI.extCommand("Football Grid", 4720640, 52, {
+	formation: ["Formation (e.g. 4-4-2)", 14, ""],
+  width: ["Field Width in pixels", 14, ""],
+  height: ["Field Height in pixels", 14, ""],
+  xStart: ["Starting X Position", 14, ""],
+  yStart: ["Starting Y Position", 14, ""],
+  direction: ["Direction", 19, "top-down", null, ["top-down", "bottom-up"]],
 	saveAs: ["Save Variable As", 14, ""]
 });
 
@@ -332,6 +374,19 @@ function generalUtilities() {
       SAMMI.setVariable(data.saveAs, output, data.FromButton, data.instanceId);
     }
   });
+
+  sammiclient.on("Football Grid", (response) => {
+    const data = response.Data;
+    if (data.formation === "" || data.width === "" || data.height === "" || data.xStart === "" || data.yStart === "" || !data.saveAs) {
+      SAMMI.alert(
+        `One or more boxes in "Football Grid" are empty/undefined (button ${data.FromButton})`
+      );
+    } else {
+      const output = genUtilsCalcFootballGrid(data.formation, parseInt(data.width), parseInt(data.height), parseInt(data.xStart), parseInt(data.yStart), data.direction);
+      SAMMI.setVariable(data.saveAs, output, data.FromButton, data.instanceId);
+    }
+  });
+
 }
 
 /*********************/
@@ -756,6 +811,80 @@ function genUtilsFormatTimeAgoPTBR(seconds, sufix = '') {
     const years = Math.floor(seconds / YEAR);
     return years === 1 ? `1 ano${sufix}` : `${years} anos${sufix}`;
   }
+}
+
+/**
+ * Generates a football (soccer) grid layout based on a given formation.
+ *
+ * @param {string} formation - The formation string (e.g., "4-4-2").
+ * @param {number} width - The total width of the field in pixels.
+ * @param {number} height - The total height of the field in pixels.
+ * @param {number} xStart - The starting X position for the grid.
+ * @param {number} yStart - The starting Y position for the grid.
+ * @param {string} direction - The direction of player placement ("top-down" or "bottom-up").
+ * @returns {Array<Object>} An array of player positions with their corresponding X and Y coordinates.
+ */
+function genUtilsCalcFootballGrid(formation, width, height, xStart, yStart, direction = "top-down") {
+  // Convert formation string "4-2-3-1" into an array of numbers
+  const rows = formation.split("-").map(n => parseInt(n));
+
+  const gridColumns = 5;
+  const gridColumnWidth = width / gridColumns;
+
+  const totalRows = rows.length;
+  const rowHeight = height / totalRows;
+
+  const result = [];
+
+  rows.forEach((playersInRow, rowIndex) => {
+    const realRow = rowIndex + 2; // Real football row starts at 2 (row 1 is the goalkeeper)
+
+    // Calculate Y position for the row
+    let y;
+    if (direction === "top-down") {
+      y = yStart + (rowIndex * rowHeight);
+    } else {
+      y = yStart - (rowIndex * rowHeight);
+    }
+
+    // Width occupied by this row (in grid columns)
+    const rowWidth = playersInRow * gridColumnWidth;
+
+    // Center the row inside the 5-column grid
+    let offsetX = xStart + (width - rowWidth) / 2;
+
+    // Extra spacing proportional to number of players in the row
+    let spacingFactor = 0;
+    if (playersInRow === 4) spacingFactor = 0.15;
+    if (playersInRow === 3) spacingFactor = 0.20;
+    if (playersInRow === 2) spacingFactor = 0.30;
+
+    const extraSpacing = gridColumnWidth * spacingFactor;
+
+    // Apply extra spacing while keeping the row centered
+    offsetX -= extraSpacing * ((playersInRow - 1) / 2);
+
+    // Calculate X for each player in the row
+    for (let colIndex = 0; colIndex < playersInRow; colIndex++) {
+      const x = offsetX + (colIndex * (gridColumnWidth + extraSpacing));
+
+      // Column numbering logic:
+      // bottom-up → 1,2,3,4
+      // top-down  → 4,3,2,1
+      const columnNumber =
+        direction === "top-down"
+          ? (playersInRow - colIndex)
+          : (colIndex + 1);
+
+      result.push({
+        pos: `${realRow}:${columnNumber}`,
+        x,
+        y
+      });
+    }
+  });
+
+  return result;
 }
 
 [insert_over]

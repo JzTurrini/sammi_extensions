@@ -39,7 +39,7 @@ Version 1.1.0 - Updated on 2026-09-04
     <td style="padding: 5px 20px; border: 1px solid white">WebSocket</td>
     <td style="padding: 5px 20px; border: 1px solid white">
       <span id="casterlabsCaffeinatedUrlLabel">
-        ws://127.0.0.1:9880/sammi-bridge
+        ws://127.0.0.1:7373/sammi-bridge
       </span>
     </td>
   </tr>
